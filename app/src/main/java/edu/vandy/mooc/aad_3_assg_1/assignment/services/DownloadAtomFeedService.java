@@ -240,7 +240,7 @@ public class DownloadAtomFeedService extends IntentService {
         // TODO -- you fill in here.
 
 
-        // Put the requestCode into the Bundle via the REQUEST_CODE key.
+        // Put the url as a string into the Bundle via the FEED_URL key.
         // TODO -- you fill in here.
 
 
