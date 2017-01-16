@@ -70,12 +70,9 @@ public class DownloadAtomFeedService extends IntentService {
     public static Intent makeIntent(Context context,
                                     int requestCode,
                                     Uri url) {
-        // Create an intent that will download the Entry(s) from the web.
-        // which involves (1) setting the URL as "data" to the
-        // intent, (2) putting the request code as an "extra" to the
-        // intent, (3) creating and putting a Messenger as an "extra"
-        // to the intent so the DownloadAtomFeedService can send the
-        // Entry Object back to the Calling Activity
+        // Create an intent that will call this server to download the Entry(s) 
+        // from the web. which involves (1) setting the URL as "data" to the
+        // intent, (2) putting the request code as an "extra" to the intent.
         // TODO -- you fill in here.
 
     }
@@ -190,7 +187,7 @@ public class DownloadAtomFeedService extends IntentService {
 
 
         // Send the YouTube Atom Feed Entries back to the
-        // MainActivity via the messenger via the sendEntries(...) method.
+        // MainActivity via the sendEntries(...) method.
         // TODO -- you fill in here.
 
 
@@ -198,8 +195,7 @@ public class DownloadAtomFeedService extends IntentService {
 
 
     /**
-     * Send the pathname back to the MainActivity via the
-     * messenger.
+     * Send the pathname back to the MainActivity via the LocalBroadcastManager + an Intent.
      */
     private void sendEntries(ArrayList<Entry> entries,
                              Uri url,
