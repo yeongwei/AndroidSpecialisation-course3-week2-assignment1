@@ -62,8 +62,8 @@ public class MainActivity extends CustomLoggingActivityBase {
     /**
      * This is CNN's Youtube Atom Feed:
      */
-    private final static String CNN_YOUTUBE_ATOM_FEED_URL = "https://www.youtube.com"
-            + "/feeds/videos.xml?channel_id=UCupvZG-5ko_eiXAupbDfxWw";
+    private final static String CNN_YOUTUBE_ATOM_FEED_URL =
+            "https://www.youtube.com/feeds/videos.xml?channel_id=UCupvZG-5ko_eiXAupbDfxWw";
 
     /**
      * Request Code for downloading youtube entries.
@@ -113,28 +113,29 @@ public class MainActivity extends CustomLoggingActivityBase {
 
     @Override
     protected void onPause() {
-        // via the LocalBroadcastManager, unregister the receiver currently registered.
-        // TODO -- you fill in here.
-
-
         super.onPause();
+
+        // via the LocalBroadcastManager, unregister the receiver currently registered.
+        if (mDownloadStateReceiver != null)
+            LocalBroadcastManager
+                    .getInstance(this.getApplicationContext())
+                    .unregisterReceiver(mDownloadStateReceiver);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         // Create an IntentFilter. The filter's action is BROADCAST_ACTION
-        // TODO -- you fill in here.
-
+        IntentFilter intentFilter = new IntentFilter(DownloadStateReceiver.BROADCAST_ACTION);
 
         // Instantiates a new DownloadStateReceiver
-        // TODO -- you fill in here.
-
+        mDownloadStateReceiver = new DownloadStateReceiver();
 
         // Registers the DownloadStateReceiver and its intent filters via an
-        // istance of LocalBroadcastManager
-        // TODO -- you fill in here.
-
+        // instance of LocalBroadcastManager
+        LocalBroadcastManager
+                .getInstance(this.getApplicationContext())
+                .registerReceiver(mDownloadStateReceiver, intentFilter);
     }
 
 
@@ -176,9 +177,8 @@ public class MainActivity extends CustomLoggingActivityBase {
         // This will involve calling DownloadAtomFeedService's makeIntent.
         // In addition, you will pass REQUEST_YOUTUBE_ENTRIES and
         // the URI parsed version of CNN_YOUTUBE_ATOM_FEED_URL obtained via Uri.parse(...)
-        // TODO -- you fill in here.
-
-
+        Intent intent = DownloadAtomFeedService.makeIntent(this.getApplicationContext(),
+                this.REQUEST_YOUTUBE_ENTRIES, url);
         Log.d(TAG,
                 "starting the DownloadAtomFeedService for "
                         + url.toString()
@@ -188,7 +188,7 @@ public class MainActivity extends CustomLoggingActivityBase {
         viewFlipper.setDisplayedChild(mProgressFlipperIndex);
 
         // call startService on that Intent.
-        // TODO -- you fill in here.
+        this.startService(intent);
 
     }
 
@@ -304,8 +304,7 @@ public class MainActivity extends CustomLoggingActivityBase {
 
                 // call startDownload(...) with the parsed version of the Uri
                 // CNN_YOUTUBE_ATOM_FEED_URL
-                // TODO -- you fill in here.
-
+                startDownload(Uri.parse(CNN_YOUTUBE_ATOM_FEED_URL));
             }
         });
     }
@@ -345,28 +344,37 @@ public class MainActivity extends CustomLoggingActivityBase {
 
         // create an 'int' with the name 'resultCode' via calling
         // DownloadAtomFeedService's getDownloadResultsCode(Bundle) method.
-        // TODO -- you fill in here.
-
+        int resultCode = DownloadAtomFeedService.getDownloadResultsCode(data);
 
         // check if resultCode = Activity.RESULT_CANCELED, if it does, then call
         // handleDownloadFailure and return;
-        // TODO -- you fill in here.
-
+        if (resultCode == Activity.RESULT_CANCELED) {
+            this.handleDownloadFailure(data);
+            return;
+        }
 
         // Otherwise **resultCode == Activity.RESULT_OK**
         // Handle a successful download.
         // Log to both the on-screen & logcat logs the requestUri from the data.
-        // TODO -- you fill in here.
-
+        if (resultCode == Activity.RESULT_OK) {
+            Uri url = DownloadAtomFeedService.getRequestUri(data);
+            Toast.makeText(this,
+                    "Feed at:\n"
+                            + url.toString()
+                            + "\n has been downloaded!",
+                    Toast.LENGTH_LONG
+            ).show();
+        }
 
         // Get the Entries from the 'data' and store them.
         // Log to the on-screen and logcat logs the number of entries downloaded.
-        // TODO -- you fill in here.
-
+        ArrayList<Entry> entries = DownloadAtomFeedService.getEntries(data);
+        String message = "Downloaded " + entries.size() + " entries.";
+        Log.i("TRACE", message);
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
 
         // Update the RecyclerView fragment via calling updateEntries(...) on it.
-        // TODO -- you fill in here.
-
+        updateEntriesInterface.updateEntries(entries);
     }
 
     /**
@@ -382,13 +390,11 @@ public class MainActivity extends CustomLoggingActivityBase {
 
         // Called when the BroadcastReceiver gets an Intent it's registered to receive
         public void onReceive(Context context, Intent intent) {
-
             // use 'MainActivity.this' to call serviceIntentReceived(Bundle) to notify the
             // instance of MainActivity currently running that the service has returned
             // the results via the BroadcastReceiver. Note: Intent.getExtras will return the
             // Bundle stored with putExtras(Bundle)
-            // TODO -- you fill in here.
-
+            MainActivity.this.serviceIntentReceived(intent.getExtras());
         }
     }
 
@@ -401,8 +407,9 @@ public class MainActivity extends CustomLoggingActivityBase {
     public static Intent makeBroadcastReceiverIntent() {
         // Create a new Intent. Then call 'setAction' on it, passing the 'BROADCAST_ACTION'
         // variable from the DownloadStateReceiver class. Then return the new Intent.
-        // TODO -- you fill in here.
-
+        Intent intent = new Intent();
+        intent.setAction(DownloadStateReceiver.BROADCAST_ACTION);
+        return intent;
     }
 
     /**

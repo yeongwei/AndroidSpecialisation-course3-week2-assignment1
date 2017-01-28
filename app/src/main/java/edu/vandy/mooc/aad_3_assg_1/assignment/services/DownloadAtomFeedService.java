@@ -57,6 +57,7 @@ public class DownloadAtomFeedService extends IntentService {
      */
     private static final String ENTRY_ARRAY_KEY = "ENTRY_ARRAY_KEY";
 
+    private static final int REQUEST_CODE_FAILED_VALUE = -1;
     /**
      * Constructor that sets the name of the IntentService.
      */
@@ -73,8 +74,11 @@ public class DownloadAtomFeedService extends IntentService {
         // Create an intent that will call this server to download the Entry(s) 
         // from the web. which involves (1) setting the URL as "data" to the
         // intent, (2) putting the request code as an "extra" to the intent.
-        // TODO -- you fill in here.
-
+        Intent intent = new Intent();
+        intent.setClassName(context, DownloadAtomFeedService.class.getName());
+        intent.setData(url);
+        intent.putExtra(DownloadAtomFeedService.REQUEST_CODE, requestCode);
+        return intent;
     }
 
     /**
@@ -86,8 +90,7 @@ public class DownloadAtomFeedService extends IntentService {
      */
     public static int getResultCode(Message message) {
         // Check to see if the download succeeded.
-        // TODO -- you fill in here.
-
+        return message.getData().getInt(DownloadAtomFeedService.DOWNLOAD_RESULTS);
     }
 
     /**
@@ -100,22 +103,18 @@ public class DownloadAtomFeedService extends IntentService {
     public static Uri getRequestUri(Message message) {
         // Extract the data from Message, which is in the form of a
         // Bundle that can be passed across processes.
-        // TODO -- you fill in here.
-
+        Bundle data = message.getData();
 
         // call getRequestUri(Bundle) on the data bundle and return the Uri it returns.
-        // TODO -- you fill in here.
-
+        return  DownloadAtomFeedService.getRequestUri(data);
     }
 
     public static Uri getRequestUri(Bundle data) {
         // use 'FEED_URL' to extract the string representation of the Uri from the Message
-        // TODO -- you fill in here.
-
+        String url = data.getString(DownloadAtomFeedService.FEED_URL);
 
         // Parse the String of the url to get a Uri and return it.
-        // TODO -- you fill in here.
-
+        return Uri.parse(url);
     }
 
 
@@ -129,12 +128,10 @@ public class DownloadAtomFeedService extends IntentService {
     public static int getRequestCode(Message message) {
         // Extract the data from Message, which is in the form of a
         // Bundle that can be passed across processes.
-        // TODO -- you fill in here.
-
+        Bundle data = message.getData();
 
         // Extract the request code and return it.
-        // TODO -- you fill in here.
-
+        return data.getInt(DownloadAtomFeedService.REQUEST_CODE);
     }
 
     /**
@@ -175,22 +172,19 @@ public class DownloadAtomFeedService extends IntentService {
     @Override
     public void onHandleIntent(Intent intent) {
         // Get the URL associated with the Intent data.
-        // TODO -- you fill in here.
-
+        Uri url = intent.getData();
 
         // Download the requested YouTube Atom Feed.
-        // TODO -- you fill in here.
-
+        List<Entry> downloadedAtomFeeds = this.downloadAtomFeed(url.toString());
+        Log.i("TRACE", "There are " + downloadedAtomFeeds.size() + " downloaded feeds.");
 
         // Extract the request code.
-        // TODO -- you fill in here.
-
+        int requestCode = intent.getIntExtra(DownloadAtomFeedService.REQUEST_CODE,
+                DownloadAtomFeedService.REQUEST_CODE_FAILED_VALUE);
 
         // Send the YouTube Atom Feed Entries back to the
         // MainActivity via the sendEntries(...) method.
-        // TODO -- you fill in here.
-
-
+        this.sendEntries((ArrayList<Entry>) downloadedAtomFeeds, url, requestCode);
     }
 
 
@@ -201,19 +195,17 @@ public class DownloadAtomFeedService extends IntentService {
                              Uri url,
                              int requestCode) {
         // Call the makeReplyBundle(...) method to create a new Bundle containing the results.
-        // TODO -- you fill in here.
-
+        Bundle data = this.makeReplyBundle(entries, url, requestCode);
 
         // Create a new Intent via calling MainActivity's makeBroadcastReceiverIntent()
         // Then, store the newly created bundle in the Intent via putExtras(...)
-        // TODO -- you fill in here.
-
+        Intent intent = MainActivity.makeBroadcastReceiverIntent();
+        intent.putExtras(data);
 
         // Now we will need to launch the Intent containing the results Bundle.
         // Get an instance of LocalBroadcastManager to send the Broadcast of the Intent via
         // sendBroadcast(...).
-        // TODO -- you fill in here.
-
+        LocalBroadcastManager.getInstance(this.getApplicationContext()).sendBroadcast(intent);
     }
 
     /**
@@ -225,30 +217,27 @@ public class DownloadAtomFeedService extends IntentService {
                                    int requestCode) {
 
         // Create a new Bundle named 'data' to handle the result.
-        // TODO -- you fill in here.
-
+        Bundle data = new Bundle();
 
         // use 'putParcelableArrayList(...)' to store the ArrayList of Entry(s) in the bundle.
-        // TODO -- you fill in here
-
+        data.putParcelableArrayList(DownloadAtomFeedService.ENTRY_ARRAY_KEY, entries);
 
         // Put the requestCode into the Bundle via the REQUEST_CODE key.
-        // TODO -- you fill in here.
-
+        data.putInt(DownloadAtomFeedService.REQUEST_CODE, requestCode);
 
         // Put the url as a string into the Bundle via the FEED_URL key.
-        // TODO -- you fill in here.
-
+        data.putString(DownloadAtomFeedService.FEED_URL, url.toString());
 
         // Set a field in the Message to indicate whether the download
         // succeeded or failed.
-        // TODO -- you fill in here.
-
-
-
+        if (requestCode == DownloadAtomFeedService.REQUEST_CODE_FAILED_VALUE)
+            data.putString("message", "Download was a failure.");
+        else {
+            data.putString("message", "Download was a success.");
+            data.putInt(DownloadAtomFeedService.DOWNLOAD_RESULTS, Activity.RESULT_OK);
+        }
         // return the bundle 'data'.
-        // TODO -- you fill in here.
-
+        return data;
     }
 
     /**
